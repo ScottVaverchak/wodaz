@@ -33,6 +33,13 @@ interval_surrounds :: proc(inter: Interval, x: f32) -> bool {
     return inter.min < x && x < inter.max
 }
 
+interval_clamp :: proc(inter: Interval, x: f32) -> f32 { 
+    if x < inter.min do return inter.min
+    if x > inter.max do return inter.max 
+
+    return x
+}
+
 
 INTERVAL_EMPTY :: Interval { min = math.INF_F32,  max = math.NEG_INF_F32 } 
 INTERVAL_UNIVERSE :: Interval { min = math.NEG_INF_F32,  max = math.INF_F32 } 

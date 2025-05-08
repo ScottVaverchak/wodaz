@@ -2,21 +2,27 @@ package main
 
 import "core:fmt"
 import "core:math"
+import "core:math/rand"
 import la "core:math/linalg"
 
 Camera :: struct { 
     aspect_ratio: f32,
     image_width: i32, 
     image_height: i32, 
+    samples_per_pixel: i32,
+    pixel_samples_scale: f32,
     center: Point3, 
     pixel00_loc: Point3, 
     pixel_delta_u: Vec3, 
     pixel_delta_v: Vec3,
 }
 
-camera_init :: proc(camera: ^Camera, aspect_ratio: f32, image_width: i32) { 
+camera_init :: proc(camera: ^Camera, aspect_ratio: f32, image_width: i32, samples_per_pixel: i32) { 
     camera.aspect_ratio = aspect_ratio
     camera.image_width = image_width
+    camera.samples_per_pixel = samples_per_pixel
+
+    camera.pixel_samples_scale = 1.0 / f32(camera.samples_per_pixel)
     
     camera.image_height = i32(f32(camera.image_width) / camera.aspect_ratio)
     camera.image_height = 1 if camera.image_height < 1 else camera.image_height
@@ -45,16 +51,14 @@ camera_render :: proc(camera: ^Camera, world: ^HitList) {
         fmt.eprintf("Scanlines remaining: {}\n", (camera.image_height - j))
 
         for i in 0..<camera.image_width { 
-            pixel_center := camera.pixel00_loc + (f32(i) * camera.pixel_delta_u) + (f32(j) * camera.pixel_delta_v)
-            ray_direction := pixel_center - camera.center
-            r := Ray { 
-                origin = camera.center, 
-                direction = ray_direction
+            pixel_color : Vec3
+
+            for sample in 0..<camera.samples_per_pixel { 
+                r := get_ray(camera, i, j)
+                pixel_color += ray_color(&r, world)
             }
 
-            pixel_color := ray_color(&r, world)
-
-            render_color(pixel_color)
+            render_color(camera.pixel_samples_scale * pixel_color)
 
         }
     }
@@ -72,11 +76,39 @@ ray_color :: proc(r: ^Ray, world: ^HitList) -> Vec3 {
     return (1.0 - a) * Vec3 { 1.0, 1.0, 1.0 } + a * Vec3 {0.5, 0.7, 1.0 }
 }
 
+// @TODO(sjv): This all seems verbose for now reason atm
+@(private="file")
+INTENSITY :: Interval { min = 0, max = 0.999 }
+
 @(private="file")
 render_color :: proc(color: Vec3) { 
-    r := i32(255.999 * color.r)
-    g := i32(255.999 * color.g)
-    b := i32(255.999 * color.b)
+    r := i32(256 * interval_clamp(INTENSITY, color.r))
+    g := i32(256 * interval_clamp(INTENSITY, color.g))
+    b := i32(256 * interval_clamp(INTENSITY, color.b))
 
     fmt.printf("{} {} {}\n", r, g, b)
+}
+
+@(private="file")
+get_ray :: proc(camera: ^Camera, i, j: i32) -> Ray { 
+    offset := sample_square()
+    pixel_sample := camera.pixel00_loc +
+                        ((f32(i) + offset.x) * camera.pixel_delta_u) +
+                        ((f32(j) + offset.y) * camera.pixel_delta_v)
+    ray_origin := camera.center
+    ray_direction := pixel_sample - ray_origin
+
+    return Ray { 
+        origin = ray_origin, 
+        direction = ray_direction 
+    }
+}
+
+@(private="file")
+sample_square :: proc() -> Vec3 { 
+    return Vec3 { 
+        rand.float32() - 0.5, 
+        rand.float32() - 0.5, 
+        0
+    }
 }

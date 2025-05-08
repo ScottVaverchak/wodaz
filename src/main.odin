@@ -12,9 +12,10 @@ main :: proc() {
 
     aspect_ratio := f32(16.0 / 9.0)
     image_width := i32(400)
+    samples_per_pixel := i32(100)
 
     camera : Camera 
-    camera_init(&camera, aspect_ratio, image_width)
+    camera_init(&camera, aspect_ratio, image_width, samples_per_pixel)
 
     world := HitList { 
         objects = make([dynamic]Hittable, 0, 16)
