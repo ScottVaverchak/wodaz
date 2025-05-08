@@ -72,7 +72,7 @@ ray_color :: proc(r: ^Ray, depth: i32, world: ^HitList) -> Vec3 {
 
     hr, ok := hitlist_hit(world, r, interval_create(0.001, math.INF_F64)).?
     if ok {
-        direction := vec3_random_on_hemisphere(hr.normal)
+        direction := hr.normal + vec3_random_unit_vector()
         rr := Ray { origin = hr.p, direction = direction }
         return 0.5 * ray_color(&rr, depth - 1, world)
     }
@@ -88,11 +88,15 @@ INTENSITY :: Interval { min = 0, max = 0.999 }
 
 @(private="file")
 render_color :: proc(color: Vec3) { 
-    r := i32(256 * interval_clamp(INTENSITY, color.r))
-    g := i32(256 * interval_clamp(INTENSITY, color.g))
-    b := i32(256 * interval_clamp(INTENSITY, color.b))
+    r := linear_to_gamma(color.r)
+    b := linear_to_gamma(color.b)
+    g := linear_to_gamma(color.g)
 
-    fmt.printf("{} {} {}\n", r, g, b)
+    rbyte := i32(256 * interval_clamp(INTENSITY, r))
+    gbyte := i32(256 * interval_clamp(INTENSITY, g))
+    bbyte := i32(256 * interval_clamp(INTENSITY, b))
+
+    fmt.printf("{} {} {}\n", rbyte, gbyte, bbyte)
 }
 
 @(private="file")
@@ -117,4 +121,9 @@ sample_square :: proc() -> Vec3 {
         rand.float64() - 0.5, 
         0
     }
+}
+
+@(private="file")
+linear_to_gamma :: proc(linear_comp: f64) -> f64 { 
+    return math.sqrt(linear_comp) if linear_comp > 0 else 0
 }
