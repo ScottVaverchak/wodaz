@@ -5,10 +5,10 @@ import la "core:math/linalg"
 Sphere :: struct { 
     using hittable: Hittable, 
 
-    radius: f32,
+    radius: f64,
 }
 
-create_hittable_sphere :: proc(pos: Vec3, radius: f32) -> ^Hittable { 
+create_hittable_sphere :: proc(pos: Vec3, radius: f64) -> ^Hittable { 
     hittable := new_hittable(Sphere)
     
     switch e in hittable.variant { 

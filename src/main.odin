@@ -4,18 +4,17 @@ import "core:fmt"
 import "core:math"
 import la "core:math/linalg"
 
-Vec3 :: [3]f32
-Point3 :: Vec3
 
 main :: proc() {
     last_id : i32 = 0
 
-    aspect_ratio := f32(16.0 / 9.0)
+    aspect_ratio := 16.0 / 9.0
     image_width := i32(400)
     samples_per_pixel := i32(100)
+    max_depth := i32(50)
 
     camera : Camera 
-    camera_init(&camera, aspect_ratio, image_width, samples_per_pixel)
+    camera_init(&camera, aspect_ratio, image_width, samples_per_pixel, max_depth)
 
     world := HitList { 
         objects = make([dynamic]Hittable, 0, 16)
