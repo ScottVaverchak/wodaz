@@ -13,7 +13,8 @@ ray_at :: proc(ray: ^Ray, t: f32) -> Point3 {
 }
 
 ray_color :: proc(r: ^Ray, world: ^HitList) -> Vec3 { 
-    hr, ok := hitlist_hit(world, r, 0, math.INF_F32).?
+    inter := interval_create(0, math.INF_F32)
+    hr, ok := hitlist_hit(world, r, inter).?
     if ok {
         return 0.5 * (hr.normal + Vec3 { 1, 1, 1 })
     }

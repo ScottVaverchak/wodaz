@@ -26,15 +26,16 @@ HitList :: struct {
 }
 
 // @TODO(sjv): This is a bad name
-hitlist_hit :: proc(hl: ^HitList, r: ^Ray, ray_tmin: f32, ray_tmax: f32,) -> Maybe(HitRecord) {
+hitlist_hit :: proc(hl: ^HitList, r: ^Ray, inter: Interval) -> Maybe(HitRecord) {
     record : Maybe(HitRecord)
 
-    closest_so_far := ray_tmax
+    closest_so_far := inter.max
 
     for obj in hl.objects { 
         switch e in obj.variant { 
         case ^Sphere:
-            hr, ok := sphere_hit(e, r, ray_tmin, closest_so_far).?
+            inter2 := interval_create(inter.min, closest_so_far)
+            hr, ok := sphere_hit(e, r, inter2).?
             if ok { 
                 closest_so_far = hr.t
                 record = hr

@@ -20,7 +20,7 @@ create_hittable_sphere :: proc(pos: Vec3, radius: f32) -> ^Hittable {
     return hittable
 }
 
-sphere_hit :: proc(sphere: ^Sphere, r: ^Ray, ray_tmin: f32, ray_tmax: f32) -> Maybe(HitRecord) { 
+sphere_hit :: proc(sphere: ^Sphere, r: ^Ray, inter: Interval) -> Maybe(HitRecord) { 
     oc := sphere.pos - r.origin
     a := la.vector_length2(r.direction)
     h := la.vector_dot(r.direction, oc)
@@ -32,11 +32,11 @@ sphere_hit :: proc(sphere: ^Sphere, r: ^Ray, ray_tmin: f32, ray_tmax: f32) -> Ma
 
     sqrtd := la.sqrt(disc)
     root := (h - sqrtd) / a;
-
-    if root <= ray_tmin || ray_tmax <= root { 
+    
+    if !interval_surrounds(inter, root) { 
         root = (h + sqrtd) / a 
 
-        if root <= ray_tmin || ray_tmax <= root {
+        if !interval_surrounds(inter, root) {
             return nil
         }
     }
