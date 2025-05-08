@@ -24,8 +24,8 @@ main :: proc() {
 
     material_ground := create_lambert_material({0.8, 0.8, 0.0}) 
     material_center := create_lambert_material({0.1, 0.2, 0.5}) 
-    material_left := create_metal_material({0.8, 0.8, 0.8}) 
-    material_right := create_metal_material({0.8, 0.6, 0.2}) 
+    material_left := create_metal_material({0.8, 0.8, 0.8}, 0.3) 
+    material_right := create_metal_material({0.8, 0.6, 0.2}, 1.0) 
 
     ground_sphere := create_hittable_sphere({  0, -100.5, -1.0 }, 100.0, material_ground)
     center_sphere := create_hittable_sphere({  0,0, -1.2 }, 0.5, material_center)

@@ -1,5 +1,6 @@
 package main
 
+import la "core:math/linalg"
 
 Material :: struct { 
     id: i32,
@@ -57,25 +58,28 @@ Metal :: struct {
     using material: Material,
 
     albedo: Vec3,
+    fuzz: f64
 }
 
 metal_scatter :: proc(metal: ^Metal, r: ^Ray, rec: ^HitRecord) -> Maybe(LambertianResult) { 
     reflected := vec3_reflect(r.direction, rec.normal)
+    reflected = la.normalize(reflected) + (metal.fuzz * vec3_random_unit_vector())
     scattered := Ray { origin = rec.p, direction = reflected }
     attenuation := metal.albedo
 
     return LambertianResult { 
         attenuation = attenuation,
         scattered = scattered,
-    }
+    } if la.dot(scattered.direction, rec.normal) > 0 else nil
 }
 
-create_metal_material :: proc(albedo: Vec3) -> ^Material { 
+create_metal_material :: proc(albedo: Vec3, fuzz: f64) -> ^Material { 
     material := new_material(Metal)
     
     #partial switch e in material.variant { 
     case ^Metal:
-    e.albedo = albedo 
+    e.albedo = albedo
+    e.fuzz = fuzz
     }
 
     return material 
