@@ -72,9 +72,15 @@ ray_color :: proc(r: ^Ray, depth: i32, world: ^HitList) -> Vec3 {
 
     hr, ok := hitlist_hit(world, r, interval_create(0.001, math.INF_F64)).?
     if ok {
-        direction := hr.normal + vec3_random_unit_vector()
-        rr := Ray { origin = hr.p, direction = direction }
-        return 0.5 * ray_color(&rr, depth - 1, world)
+        switch m in hr.mat.variant { 
+        case ^Lambertian:
+        lr, lok := lambertian_scatter(m, r, &hr).?
+        return { 0, 0, 0} if !lok else lr.attenuation * ray_color(&lr.scattered, depth - 1, world)
+        case ^Metal:
+        mr, mok := metal_scatter(m, r, &hr).?
+        return { 0, 0, 0} if !mok else mr.attenuation * ray_color(&mr.scattered, depth - 1, world)
+        }
+
     }
 
     unit_direction := la.normalize(r.direction)

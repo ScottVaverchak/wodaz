@@ -22,9 +22,17 @@ main :: proc() {
 
     defer delete(world.objects)
 
-    sphere1 := create_hittable_sphere({0, 0, -1}, 0.5)
-    sphere2 := create_hittable_sphere({0, -100.5, -1}, 100)
-    append(&world.objects, sphere1^, sphere2^) 
+    material_ground := create_lambert_material({0.8, 0.8, 0.0}) 
+    material_center := create_lambert_material({0.1, 0.2, 0.5}) 
+    material_left := create_metal_material({0.8, 0.8, 0.8}) 
+    material_right := create_metal_material({0.8, 0.6, 0.2}) 
+
+    ground_sphere := create_hittable_sphere({  0, -100.5, -1.0 }, 100.0, material_ground)
+    center_sphere := create_hittable_sphere({  0,0, -1.2 }, 0.5, material_center)
+    left_sphere := create_hittable_sphere({ -1.0, 0, -1.0 }, 0.5, material_left)
+    right_sphere := create_hittable_sphere({ 1.0, 0, -1.0 }, 0.5, material_right)
+
+    append(&world.objects, ground_sphere^, center_sphere^, left_sphere^, right_sphere^) 
 
     camera_render(&camera, &world)
     

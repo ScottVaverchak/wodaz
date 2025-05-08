@@ -1,5 +1,6 @@
 package main
 
+import "core:math"
 import la "core:math/linalg"
 import "core:math/rand"
 
@@ -40,3 +41,13 @@ vec3_random_on_hemisphere :: proc(normal: Vec3) -> Vec3 {
         return -on_unit_sphere
     }
 }
+
+vec3_near_zero :: proc(v: Vec3) -> bool { 
+    s := 1e-8
+    return (math.abs(v.x) < s) && (math.abs(v.y) < s) && (math.abs(v.z) < s)
+}
+
+vec3_reflect :: proc(v, n: Vec3) -> Vec3 { 
+    return v - 2 * la.vector_dot(v, n) * n
+}
+
