@@ -6,7 +6,66 @@ import la "core:math/linalg"
 Vec3 :: [3]f32
 Point3 :: Vec3
 
+
+HitRecord :: struct { 
+    p: Point3,
+    normal: Vec3,
+    t: f32
+}
+
+Hittable :: struct { 
+    id: i32,
+    pos: Vec3, 
+
+    varient: union { ^Sphere } 
+}
+
+new_hittable :: proc($T: typeid) -> ^T { 
+    e := new(T)
+    e.variant = e 
+    return e
+}
+
+Sphere :: struct { 
+    using hittable: Hittable, 
+
+    radius: f32,
+}
+
+sphere_hit :: proc(sphere: ^Sphere, r: ^Ray, ray_tmin: f32, ray_tmax: f32) -> (bool, HitRecord) { 
+    res := HitRecord {}
+
+    oc := sphere.pos - r.origin
+    a := la.vector_length2(r.direction)
+    h := la.vector_dot(r.direction, oc)
+    c := la.vector_length2(oc) - sphere.radius * sphere.radius
+    disc := h*h - a*c
+    if disc < 0 { 
+        return false, res 
+    }
+
+    sqrtd := la.sqrt(disc)
+    root := (h - sqrtd) / a;
+
+    if root <= ray_tmin || ray_tmax <= root { 
+        root = (h + sqrtd) / a 
+
+        if root <= ray_tmin || ray_tmax <= root {
+            return false, res
+        }
+    }
+
+    res.t = root
+    res.p = ray_at(r, res.t)
+    res.normal = (res.p - sphere.pos) / sphere.radius
+
+    return true, res
+}
+
+
 main :: proc() {
+    last_id : i32 = 0
+
     aspect_ratio := f32(16.0 / 9.0)
     image_width := i32(400)
 
@@ -59,8 +118,11 @@ print_color :: proc(color: Vec3) {
 }
 
 ray_color :: proc(r: ^Ray) -> Vec3 { 
-    if hit_sphere(Point3 { 0, 0, -1 }, 0.5, r) { 
-        return { 1, 0, 0 }
+    t := hit_sphere(Point3 { 0, 0, -1 }, 0.5, r);
+
+    if t > 0.0 {
+        n := la.normalize(ray_at(r, t) - Vec3 { 0, 0, -1 })
+        return 0.5 * (n + Vec3 { 1, 1, 1 })
     }
 
     unit_direction := la.normalize(r.direction)
@@ -68,11 +130,12 @@ ray_color :: proc(r: ^Ray) -> Vec3 {
     return (1.0 - a) * Vec3 { 1.0, 1.0, 1.0 } + a * Vec3 {0.5, 0.7, 1.0 }
 }
 
-hit_sphere :: proc(center: Point3, radius: f32, r: ^Ray) -> bool { 
+hit_sphere :: proc(center: Point3, radius: f32, r: ^Ray) -> f32 { 
     oc := center - r.origin
-    a := la.dot(r.direction, r.direction)
-    b := -2.0 * la.dot(r.direction, oc)
-    c := la.dot(oc, oc) - radius * radius
-    discriminant := b*b - 4*a*c 
-    return discriminant >= 0
+    a := la.vector_length2(r.direction)
+    h := la.vector_dot(r.direction, oc)
+    c := la.vector_length2(oc) - radius * radius
+    disc := h*h - a*c
+
+    return -1.0 if disc < 0 else (h - la.sqrt(disc)) / a
 }
