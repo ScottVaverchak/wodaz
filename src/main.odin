@@ -25,14 +25,16 @@ main :: proc() {
     material_ground := create_lambert_material({0.8, 0.8, 0.0}) 
     material_center := create_lambert_material({0.1, 0.2, 0.5}) 
     material_left := create_dialectric_material(1.5) 
+    material_bubble := create_dialectric_material(1.0 / 1.5) 
     material_right := create_metal_material({0.8, 0.6, 0.2}, 1) 
 
     ground_sphere := create_hittable_sphere({  0, -100.5, -1.0 }, 100.0, material_ground)
     center_sphere := create_hittable_sphere({  0,0, -1.2 }, 0.5, material_center)
     left_sphere := create_hittable_sphere({ -1.0, 0, -1.0 }, 0.5, material_left)
+    bubble_sphere := create_hittable_sphere({ -1.0, 0, -1.0 }, 0.4, material_bubble)
     right_sphere := create_hittable_sphere({ 1.0, 0, -1.0 }, 0.5, material_right)
 
-    append(&world.objects, ground_sphere^, center_sphere^, left_sphere^, right_sphere^) 
+    append(&world.objects, ground_sphere^, center_sphere^, left_sphere^, right_sphere^, bubble_sphere^) 
 
     camera_render(&camera, &world)
     

@@ -1,6 +1,8 @@
 package main
 
+import "core:math"
 import la "core:math/linalg"
+import "core:math/rand"
 
 Material :: struct { 
     id: i32,
@@ -93,17 +95,33 @@ Dialectric :: struct {
 }
 
 dialectric_scatter :: proc(dia: ^Dialectric, r: ^Ray, rec: ^HitRecord) -> Maybe(MaterialResult) { 
-    attenuation := Vec3 { 1, 1, 1 }
     ri := (1.0 / dia.refraction_index) if rec.front_face else dia.refraction_index
 
     unit_dir := la.normalize(r.direction)
-    refracted := vec3_refract(unit_dir, rec.normal, ri)
-    scattered := Ray { origin = rec.p, direction = refracted }
+    
+    cos_theta := math.min(la.vector_dot(-unit_dir, rec.normal), 1.0)
+    sin_theta := math.sqrt(1.0 - cos_theta * cos_theta)
+
+    cannot_refract := ri * sin_theta > 1.0
+
+    direction : Vec3
+
+    if cannot_refract || dialectric_reflectance(cos_theta, ri) > rand.float64() { 
+        direction = vec3_reflect(unit_dir, rec.normal)
+    } else { 
+        direction = vec3_refract(unit_dir, rec.normal, ri)
+    }
 
     return MaterialResult { 
-        attenuation = attenuation,
-        scattered = scattered,
+        attenuation = Vec3 { 1, 1, 1 },
+        scattered = Ray { origin = rec.p, direction = direction },
     }
+}
+
+dialectric_reflectance :: proc(cosine, refraction_index: f64) -> f64 { 
+    r0 := (1 - refraction_index) / (1 + refraction_index)
+    r0 = r0 * r0 
+    return r0 + (1 - r0) * math.pow((1 - cosine), 5)
 }
 
 create_dialectric_material :: proc(refraction_index: f64) -> ^Material { 
