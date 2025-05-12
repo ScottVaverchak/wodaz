@@ -18,34 +18,44 @@ Camera :: struct {
     pixel_delta_v: Vec3,
 
     vfov: f64,
+    lookfrom, lookat: Vec3,
+    vup: Vec3, 
+    u, v, w: Vec3,
 }
 
-camera_init :: proc(camera: ^Camera, aspect_ratio: f64, image_width: i32, samples_per_pixel: i32, max_depth: i32, vfov: f64) { 
+camera_init :: proc(camera: ^Camera, aspect_ratio: f64 = 1.0, image_width: i32 = 100, samples_per_pixel: i32 = 10, max_depth: i32 = 10, vfov: f64 = 90, lookfrom: Vec3 = {0, 0, 0}, lookat: Vec3 = {0, 0, -1}, vup: Vec3 = {0, 1, 0}) { 
     camera.aspect_ratio = aspect_ratio
     camera.image_width = image_width
     camera.samples_per_pixel = samples_per_pixel
     camera.max_depth = max_depth
     camera.vfov = vfov
+    camera.lookfrom = lookfrom
+    camera.lookat = lookat
+    camera.vup = vup
 
     camera.pixel_samples_scale = 1.0 / f64(camera.samples_per_pixel)
     
     camera.image_height = i32(f64(camera.image_width) / camera.aspect_ratio)
     camera.image_height = 1 if camera.image_height < 1 else camera.image_height
 
-    focal_length := 1.0
+    focal_length := la.length(lookfrom - lookat) 
     theta := math.to_radians(camera.vfov)
     h := math.tan(theta / 2)
     viewport_height := 2 * h * focal_length
     viewport_width := viewport_height * (f64(camera.image_width) / f64(camera.image_height))
-    camera.center = Point3 { 0, 0, 0 }
+    camera.center = camera.lookfrom
 
-    viewport_u := Vec3 { viewport_width, 0, 0, }
-    viewport_v := Vec3 { 0, -viewport_height, 0 }
+    camera.w = la.normalize(camera.lookfrom - camera.lookat)
+    camera.u = la.normalize(la.cross(camera.vup, camera.w))
+    camera.v = la.cross(camera.w, camera.u)
+
+    viewport_u := viewport_width * camera.u
+    viewport_v := viewport_height * -camera.v
 
     camera.pixel_delta_u = viewport_u / f64(camera.image_width)
     camera.pixel_delta_v = viewport_v / f64(camera.image_height)
 
-    viewport_upper_left := camera.center - Vec3 { 0, 0, focal_length } - viewport_u / 2.0 - viewport_v / 2.0
+    viewport_upper_left := camera.center - (focal_length * camera.w) - viewport_u / 2 - viewport_v / 2
     camera.pixel00_loc = viewport_upper_left + 0.5 * (camera.pixel_delta_u + camera.pixel_delta_v)
 }
 
