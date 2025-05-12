@@ -21,9 +21,14 @@ Camera :: struct {
     lookfrom, lookat: Vec3,
     vup: Vec3, 
     u, v, w: Vec3,
+
+    defocus_angle: f64, 
+    focus_dist: f64,
+
+    defocus_disk_u, defocus_disk_v: Vec3, 
 }
 
-camera_init :: proc(camera: ^Camera, aspect_ratio: f64 = 1.0, image_width: i32 = 100, samples_per_pixel: i32 = 10, max_depth: i32 = 10, vfov: f64 = 90, lookfrom: Vec3 = {0, 0, 0}, lookat: Vec3 = {0, 0, -1}, vup: Vec3 = {0, 1, 0}) { 
+camera_init :: proc(camera: ^Camera, aspect_ratio: f64 = 1.0, image_width: i32 = 100, samples_per_pixel: i32 = 10, max_depth: i32 = 10, vfov: f64 = 90, lookfrom: Vec3 = {0, 0, 0}, lookat: Vec3 = {0, 0, -1}, vup: Vec3 = {0, 1, 0}, defocus_angle: f64 = 0, focus_dist: f64 = 10) { 
     camera.aspect_ratio = aspect_ratio
     camera.image_width = image_width
     camera.samples_per_pixel = samples_per_pixel
@@ -32,16 +37,17 @@ camera_init :: proc(camera: ^Camera, aspect_ratio: f64 = 1.0, image_width: i32 =
     camera.lookfrom = lookfrom
     camera.lookat = lookat
     camera.vup = vup
+    camera.defocus_angle = defocus_angle
+    camera.focus_dist = focus_dist
 
     camera.pixel_samples_scale = 1.0 / f64(camera.samples_per_pixel)
     
     camera.image_height = i32(f64(camera.image_width) / camera.aspect_ratio)
     camera.image_height = 1 if camera.image_height < 1 else camera.image_height
 
-    focal_length := la.length(lookfrom - lookat) 
     theta := math.to_radians(camera.vfov)
     h := math.tan(theta / 2)
-    viewport_height := 2 * h * focal_length
+    viewport_height := 2 * h * camera.focus_dist
     viewport_width := viewport_height * (f64(camera.image_width) / f64(camera.image_height))
     camera.center = camera.lookfrom
 
@@ -55,8 +61,12 @@ camera_init :: proc(camera: ^Camera, aspect_ratio: f64 = 1.0, image_width: i32 =
     camera.pixel_delta_u = viewport_u / f64(camera.image_width)
     camera.pixel_delta_v = viewport_v / f64(camera.image_height)
 
-    viewport_upper_left := camera.center - (focal_length * camera.w) - viewport_u / 2 - viewport_v / 2
+    viewport_upper_left := camera.center - (camera.focus_dist * camera.w) - viewport_u / 2 - viewport_v / 2
     camera.pixel00_loc = viewport_upper_left + 0.5 * (camera.pixel_delta_u + camera.pixel_delta_v)
+
+    defocus_radius := camera.focus_dist * math.tan(math.to_radians(camera.defocus_angle / 2))
+    camera.defocus_disk_u = camera.u * defocus_radius
+    camera.defocus_disk_v = camera.v * defocus_radius
 }
 
 camera_render :: proc(camera: ^Camera, world: ^HitList) { 
@@ -131,13 +141,21 @@ get_ray :: proc(camera: ^Camera, i, j: i32) -> Ray {
     pixel_sample := camera.pixel00_loc +
                         ((f64(i) + offset.x) * camera.pixel_delta_u) +
                         ((f64(j) + offset.y) * camera.pixel_delta_v)
-    ray_origin := camera.center
+    ray_origin := camera.center if camera.defocus_angle <= 0 else defocus_disk_sample(camera)
     ray_direction := pixel_sample - ray_origin
 
     return Ray { 
         origin = ray_origin, 
         direction = ray_direction 
     }
+}
+
+@(private="file")
+defocus_disk_sample :: proc(camera: ^Camera) -> Vec3 {
+    p := vec3_random_in_unit_disk()
+
+    return camera.center + (p.x * camera.defocus_disk_u) + (p.y * camera.defocus_disk_v)
+
 }
 
 @(private="file")

@@ -59,3 +59,11 @@ vec3_refract :: proc(uv, n: Vec3, etai_over_etat: f64) -> Vec3 {
     return r_out_perp + r_out_para
 }
 
+vec3_random_in_unit_disk :: proc() -> Vec3 { 
+    for { 
+        p := Vec3 { rand.float64_range(-1, 1), rand.float64_range(-1, 1), 0}
+        if la.length2(p) < 1 {
+            return p
+        }
+    }
+}
