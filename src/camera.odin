@@ -16,13 +16,16 @@ Camera :: struct {
     pixel00_loc: Point3, 
     pixel_delta_u: Vec3, 
     pixel_delta_v: Vec3,
+
+    vfov: f64,
 }
 
-camera_init :: proc(camera: ^Camera, aspect_ratio: f64, image_width: i32, samples_per_pixel: i32, max_depth: i32) { 
+camera_init :: proc(camera: ^Camera, aspect_ratio: f64, image_width: i32, samples_per_pixel: i32, max_depth: i32, vfov: f64) { 
     camera.aspect_ratio = aspect_ratio
     camera.image_width = image_width
     camera.samples_per_pixel = samples_per_pixel
     camera.max_depth = max_depth
+    camera.vfov = vfov
 
     camera.pixel_samples_scale = 1.0 / f64(camera.samples_per_pixel)
     
@@ -30,7 +33,9 @@ camera_init :: proc(camera: ^Camera, aspect_ratio: f64, image_width: i32, sample
     camera.image_height = 1 if camera.image_height < 1 else camera.image_height
 
     focal_length := 1.0
-    viewport_height := 2.0
+    theta := math.to_radians(camera.vfov)
+    h := math.tan(theta / 2)
+    viewport_height := 2 * h * focal_length
     viewport_width := viewport_height * (f64(camera.image_width) / f64(camera.image_height))
     camera.center = Point3 { 0, 0, 0 }
 
