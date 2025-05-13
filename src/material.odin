@@ -48,7 +48,7 @@ lambertian_scatter :: proc(lamb: ^Lambertian, r: ^Ray, rec: ^HitRecord) -> Maybe
     
     if vec3_near_zero(scatter_direction) do scatter_direction = rec.normal
     
-    scattered := Ray { origin = rec.p, direction = scatter_direction }
+    scattered := Ray { origin = rec.p, direction = scatter_direction, time = r.time }
     attenuation := lamb.albedo
 
     return MaterialResult { 
@@ -67,7 +67,7 @@ Metal :: struct {
 metal_scatter :: proc(metal: ^Metal, r: ^Ray, rec: ^HitRecord) -> Maybe(MaterialResult) { 
     reflected := vec3_reflect(r.direction, rec.normal)
     reflected = la.normalize(reflected) + (metal.fuzz * vec3_random_unit_vector())
-    scattered := Ray { origin = rec.p, direction = reflected }
+    scattered := Ray { origin = rec.p, direction = reflected, time = r.time }
     attenuation := metal.albedo
 
     return MaterialResult { 
@@ -114,7 +114,7 @@ dialectric_scatter :: proc(dia: ^Dialectric, r: ^Ray, rec: ^HitRecord) -> Maybe(
 
     return MaterialResult { 
         attenuation = Vec3 { 1, 1, 1 },
-        scattered = Ray { origin = rec.p, direction = direction },
+        scattered = Ray { origin = rec.p, direction = direction, time = r.time },
     }
 }
 

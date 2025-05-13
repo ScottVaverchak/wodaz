@@ -33,7 +33,7 @@ main :: proc() {
     defer delete(world.objects)
 
     ground_material := create_lambert_material({0.5, 0.5, 0.5})
-    ground_sphere := create_hittable_sphere({ 0, -1000, 0}, 1000, ground_material);
+    ground_sphere := create_static_hittable_sphere({ 0, -1000, 0}, 1000, ground_material);
 
     append(&world.objects, ground_sphere^)
 
@@ -47,21 +47,24 @@ main :: proc() {
             }
 
             if la.length(center - { 4, 0.2, 0}) > 0.9 {
-                mat : ^Material 
-
                 if choose_mat < 0.8 { 
                     albedo := vec3_random() * vec3_random()
-                    mat = create_lambert_material(albedo)
+                    mat := create_lambert_material(albedo)
+                    center2 := center + Vec3 { 0, rand.float64_range(0, 0.5), 0}
+                    sphere := create_moving_hittable_sphere(center, center2, 0.2, mat)
+                    append(&world.objects, sphere^)
                 } else if choose_mat < 0.95 { 
                     albedo := vec3_random_range(0, 0.5)
                     fuzz := rand.float64_range(0, 0.5)
-                    mat = create_metal_material(albedo, fuzz)
+                    mat := create_metal_material(albedo, fuzz)
+                    sphere := create_static_hittable_sphere(center, 0.2, mat)
+                    append(&world.objects, sphere^)
                 } else { 
-                    mat = create_dialectric_material(1.5)
+                    mat := create_dialectric_material(1.5)
+                    sphere := create_static_hittable_sphere(center, 0.2, mat)
+                    append(&world.objects, sphere^)
                 }
 
-                sphere := create_hittable_sphere(center, 0.2, mat)
-                append(&world.objects, sphere^)
             }
         }
     }
@@ -70,9 +73,9 @@ main :: proc() {
     material2 := create_lambert_material({0.4, 0.2, 0.1})
     material3 := create_metal_material({ 0.7, 0.6, 0.5}, 0.0)
 
-    sphere1 := create_hittable_sphere({ 0, 1, 0}, 1.0,  material1)
-    sphere2 := create_hittable_sphere({ -4, 1, 0}, 1.0, material2)
-    sphere3 := create_hittable_sphere({ 4, 1, 0}, 1.0, material3)
+    sphere1 := create_static_hittable_sphere({ 0, 1, 0}, 1.0,  material1)
+    sphere2 := create_static_hittable_sphere({ -4, 1, 0}, 1.0, material2)
+    sphere3 := create_static_hittable_sphere({ 4, 1, 0}, 1.0, material3)
 
     append(&world.objects, sphere1^, sphere2^, sphere3^)
 
